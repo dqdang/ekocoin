@@ -1,0 +1,2 @@
+# ekocoin
+Cute crypto
