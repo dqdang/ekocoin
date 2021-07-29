@@ -1,8 +1,9 @@
 type Hash = Vec<u8>;
-type Address = String;
+// type Address = String;
 
 // Credit: https://stackoverflow.com/a/44378174/2773837
 use std::time::{ SystemTime, UNIX_EPOCH };
+use blake2::{Blake2s, Digest};
 
 pub fn now () -> u128 {
     let duration = SystemTime::now()
@@ -77,6 +78,13 @@ pub fn difficulty_bytes_as_u128 (v: &Vec<u8>) -> u128 {
     ((v[18] as u128) << 0x2 * 8) |
     ((v[17] as u128) << 0x1 * 8) |
     ((v[16] as u128) << 0x0 * 8)
+}
+
+pub fn rehash(bytes: &Hash) -> Vec<u8> {
+    let mut hasher = Blake2s::new();
+    hasher.update(bytes);
+    let res = hasher.finalize();
+    return res.to_vec();
 }
 
 mod block;
