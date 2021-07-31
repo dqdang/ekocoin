@@ -1,11 +1,11 @@
 type Hash = Vec<u8>;
-// type Address = String;
+type Address = String;
 
 // Credit: https://stackoverflow.com/a/44378174/2773837
 use std::time::{ SystemTime, UNIX_EPOCH };
 use blake2::{Blake2s, Digest};
 
-pub fn now () -> u128 {
+pub fn now() -> u128 {
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap()
@@ -14,7 +14,7 @@ pub fn now () -> u128 {
     duration.as_secs() as u128 * 1000 + duration.subsec_millis() as u128
 }
 
-pub fn u32_bytes (u: &u32) -> [u8; 4] {
+pub fn u32_bytes(u: &u32) -> [u8; 4] {
     [
         (u >> 8 * 0x0) as u8,
         (u >> 8 * 0x1) as u8,
@@ -23,7 +23,7 @@ pub fn u32_bytes (u: &u32) -> [u8; 4] {
     ]
 }
 
-pub fn u64_bytes (u: &u64) -> [u8; 8] {
+pub fn u64_bytes(u: &u64) -> [u8; 8] {
     [
         (u >> 8 * 0x0) as u8,
         (u >> 8 * 0x1) as u8,
@@ -37,7 +37,7 @@ pub fn u64_bytes (u: &u64) -> [u8; 8] {
     ]
 }
 
-pub fn u128_bytes (u: &u128) -> [u8; 16] {
+pub fn u128_bytes(u: &u128) -> [u8; 16] {
     [
         (u >> 8 * 0x0) as u8,
         (u >> 8 * 0x1) as u8,
@@ -61,7 +61,7 @@ pub fn u128_bytes (u: &u128) -> [u8; 16] {
     ]
 }
 
-pub fn difficulty_bytes_as_u128 (v: &Vec<u8>) -> u128 {
+pub fn difficulty_bytes_as_u128(v: &Vec<u8>) -> u128 {
     ((v[31] as u128) << 0xf * 8) |
     ((v[30] as u128) << 0xe * 8) |
     ((v[29] as u128) << 0xd * 8) |
@@ -93,5 +93,5 @@ mod hashable;
 pub use crate::hashable::Hashable;
 mod blockchain;
 pub use crate::blockchain::Blockchain;
-// pub mod transaction;
-// pub use crate::transaction::Transaction;
+pub mod transaction;
+pub use crate::transaction::Transaction;
