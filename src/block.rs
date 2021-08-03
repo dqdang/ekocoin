@@ -8,7 +8,7 @@ pub struct Block {
     pub hash: Hash,
     pub prev_block_hash: Hash,
     pub nonce: Hash,
-    // pub transactions: Vec<Transaction>,
+    pub transactions: Vec<Transaction>,
     pub payload: String,
     pub difficulty: u128,
 }
@@ -17,14 +17,13 @@ impl Debug for Block {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         write!(
             f,
-            // "Block[{}]: {} at: {} with: {} nonce: {}",
-            "Block[{}]: {} / {} at: {} with: nonce: {}",
+            "Block[{}]: {} / {} at: {} with: nonce: {}, Transaction: {}",
             &self.index,
             self.payload,
             &hex::encode(&self.hash),
             &self.timestamp,
-            // &self.transactions.len(),
             &hex::encode(&self.nonce),
+            &self.transactions.len(),
         )
     }
 }
@@ -35,7 +34,7 @@ impl Block {
         timestamp: u128,
         prev_block_hash: Hash,
         nonce: Hash,
-        // transactions: Vec<Transaction>,
+        transactions: Vec<Transaction>,
         payload: String,
         difficulty: u128,
     ) -> Self {
@@ -45,8 +44,8 @@ impl Block {
             hash: vec![0; 32],
             prev_block_hash,
             nonce,
+            transactions,
             payload,
-            // transactions,
             difficulty,
         }
     }
@@ -72,12 +71,11 @@ impl Hashable for Block {
         bytes.extend(&u128_bytes(&self.timestamp));
         bytes.extend(&self.prev_block_hash);
         bytes.extend(&self.nonce);
-        // bytes.extend(
-        //     self.transactions
-        //         .iter()
-        //         .flat_map(|transaction| transaction.bytes())
-        //         .collect::<Vec<u8>>(),
-        // );
+        bytes.extend(
+            self.transactions.iter()
+            .flat_map(|transaction| transaction.bytes())
+            .collect::<Vec<u8>>(),
+        );
         bytes.extend(self.payload.as_bytes());
         bytes.extend(&u128_bytes(&self.difficulty));
 
