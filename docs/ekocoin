@@ -1,6 +1,7 @@
 ekocoin
 
 https://etherscan.io/tx/0x1f44d9ff3c0c7e8a6404aad2994e5c337f11255d9cb5a15fe2de9d159f0017f1
+https://etherscan.io/tx/0xb76b106ab83876ae60406e6b9a48df789274b3e96489b29f4453f682a83de2b7
 
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
