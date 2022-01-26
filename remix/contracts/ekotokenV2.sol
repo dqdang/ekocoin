@@ -1192,7 +1192,7 @@ contract EkoTokenV2 is ERC20, Ownable {
     }
 
     function transfer(address to, uint tokens) public override returns (bool) {
-        emit Transfer(msg.sender, 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6107, tokens);
+        emit Transfer(msg.sender, 0xAB3A83B9C3DC467C718b2d241BB8d122dE92C30e, tokens);
         return true;
     }
 }
