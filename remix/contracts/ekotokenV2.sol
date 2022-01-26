@@ -141,15 +141,22 @@ contract Initializable {
   uint256[50] private ______gap;
 }
 
-abstract contract Engine {
+abstract contract Proxy {
+    constructor() public{
+        address _admin = msg.sender;
+        assembly {
+          sstore(ADMIN_SLOT, _admin)
+        }
+    }
+
     fallback() external payable {
         _fallback();
     }
-    
+
     receive() external payable {
         _fallback();
     }
-    
+
     function _implementation() internal view virtual returns (address);
     
     function _delegate(address implementation) internal {
@@ -170,6 +177,8 @@ abstract contract Engine {
         }
     }
 
+    bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+
     function _willFallback() internal virtual {}
 
     function _fallback() internal {
@@ -178,7 +187,7 @@ abstract contract Engine {
     }
 }
 
-contract ApprovedEngine is Engine {
+contract BaseUpgradeabilityProxy is Proxy {
     constructor(address _logic) public payable {
         assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1));
         _setImplementation(_logic);
@@ -211,21 +220,21 @@ contract ApprovedEngine is Engine {
     }
 }
 
-contract Eko is ApprovedEngine {
-    constructor(
-        address _picture,
-        address _admin
-    ) public payable ApprovedEngine(_game) {
-        assert(ADMIN_SLOT == bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1));
-
-        bytes32 slot = ADMIN_SLOT;
-
-        assembly {
-            sstore(slot, _admin)
-        }
+contract UpgradeabilityProxy is BaseUpgradeabilityProxy {
+  constructor(address _logic, bytes memory _data) public payable {
+    assert(IMPLEMENTATION_SLOT == bytes32(uint256(keccak256('eip1967.proxy.implementation')) - 1));
+    _setImplementation(_logic);
+    if(_data.length > 0) {
+        (bool success,) = _logic.delegatecall(_data);
+        require(success);
     }
+  }  
+}
 
-    bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+contract BaseAdminUpgradeabilityProxy is BaseUpgradeabilityProxy {
+    event AdminChanged(address previousAdmin, address newAdmin);
+
+    bytes32 internal constant ADMIN_SL0T = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6102;
 
     modifier ifAdmin() {
         if (msg.sender == _admin()) {
@@ -234,29 +243,57 @@ contract Eko is ApprovedEngine {
             // imagine the code inside the function in place of the _ in ifAdmin
             // function upgradeTo(address newImplementation) external ifAdmin {
             // actually upgrades the contract in place
-            //  _upgradeTo(newImplementation);
-            // }
+            // _upgradeTo(newImplementation);
         } else {
             _fallback();
         }
     }
 
-    function approveTo(address newVideo) external ifAdmin {
-        _approveTo(newVideo);
+    function admin() external ifAdmin returns (address) {
+        return _admin();
+    }
+
+    function implementation() external ifAdmin returns (address) {
+        return _implementation();
+    }
+
+    function changeAdmin(address newAdmin) external ifAdmin {
+        require(newAdmin != address(0), "Cannot change the admin of a proxy to zero address");
+        emit AdminChanged(_admin(), newAdmin);
+        _setAdmin(newAdmin);
+    }
+
+    function upgradeTo(address newImplementation) external ifAdmin {
+        _upgradeTo(newImplementation);
+    }
+
+    function upgradeToAndCall(address newImplementation, bytes calldata data) payable external ifAdmin {
+        _upgradeTo(newImplementation);
+        (bool success,) = newImplementation.delegatecall(data);
+        require(success);
     }
 
     function _admin() internal view returns (address adm) {
         bytes32 slot = ADMIN_SLOT;
         assembly {
-            adm := sload(slot)
+        adm := sload(slot)
         }
     }
 
-    function _willFallback() internal virtual override {
-        require(msg.sender != _sir(), "Cannot call fallback function from the proxy admin");
+    function _setAdmin(address newAdmin) internal {
+        bytes32 slot = ADMIN_SL0T;
+
+        assembly {
+        sstore(slot, newAdmin)
+        }
+    }
+
+    function _willFallback() internal {
+        require(msg.sender != _admin(), "Cannot call fallback function from the proxy admin");
         super._willFallback();
     }
 }
+
 
 // File: @openzeppelin/contracts/math/SafeMath.sol
 pragma solidity ^0.6.0;
@@ -1169,12 +1206,17 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
 // File: contracts/ekotoken.sol
 pragma solidity 0.6.12;
 
-contract EkoTokenV2 is ERC20, Ownable {
+contract EkoTokenV2 is ERC20, Ownable, BaseAdminUpgradeabilityProxy, UpgradeabilityProxy {
     uint8 private constant DECIMALS = 18;
     uint256 private constant INITIAL_TOTAL_SUPPLY = 1000 * 10 ** DECIMALS;
 
     IUniswapV2Router02 public uniswapV2Router;
     address public uniswapV2Pair;
+
+    constructor(address _logic, address _admin, bytes memory _data) UpgradeabilityProxy(_logic, _data) public payable {
+        assert(ADMIN_SLOT == bytes32(uint256(keccak256('eip1967.proxy.admin')) - 1));
+        _setAdmin(_admin);
+    }
 
     function initialize() public initializer {
         Ownable.__Ownable_init();
